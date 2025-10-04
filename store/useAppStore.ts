@@ -18,6 +18,13 @@ interface AppStore extends DashboardState {
   
   selectedDeflectionStrategy: DeflectionStrategy | null;
   setSelectedDeflectionStrategy: (strategy: DeflectionStrategy | null) => void;
+  
+  // Accessibility features
+  showKeyboardHints: boolean;
+  setShowKeyboardHints: (show: boolean) => void;
+  
+  colorblindMode: 'none' | 'deuteranopia' | 'protanopia' | 'tritanopia';
+  setColorblindMode: (mode: 'none' | 'deuteranopia' | 'protanopia' | 'tritanopia') => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -38,12 +45,14 @@ export const useAppStore = create<AppStore>((set) => ({
     velocity: 20,
     angle: 45,
     impactLocation: {
-      lat: 40.7128,
-      lng: -74.006,
+      lat: 35.6762, // Tokyo (more neutral starting point)
+      lng: 139.6503,
     },
     isWaterImpact: false,
   },
   selectedDeflectionStrategy: null,
+  showKeyboardHints: true,
+  colorblindMode: 'none',
 
   // Actions
   setSelectedAsteroid: (asteroid) => set({ selectedAsteroid: asteroid }),
@@ -63,4 +72,6 @@ export const useAppStore = create<AppStore>((set) => ({
       impactParameters: { ...state.impactParameters, ...params },
     })),
   setSelectedDeflectionStrategy: (strategy) => set({ selectedDeflectionStrategy: strategy }),
+  setShowKeyboardHints: (show) => set({ showKeyboardHints: show }),
+  setColorblindMode: (mode) => set({ colorblindMode: mode }),
 }));

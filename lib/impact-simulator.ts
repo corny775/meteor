@@ -33,6 +33,7 @@ export class ImpactSimulator {
   /**
    * Calculate crater dimensions using scaling laws
    * Based on Collins et al. (2005) and Holsapple (1993)
+   * Formula: D = K * E^(1/3.4) where K is scaling constant
    */
   static calculateCraterSize(params: ImpactParameters): {
     diameter: number;
@@ -41,10 +42,14 @@ export class ImpactSimulator {
     const energy = this.calculateImpactEnergy(params);
     const energyMT = energy.megatonsTNT;
 
-    // Scaling law: D = K * E^(1/3.4)
+    // Scaling constant K (1.2 for land, 1.8 for water)
     const K = params.isWaterImpact ? 1.8 : 1.2;
-    const diameter = K * Math.pow(energyMT, 1 / 3.4) * 1000;
-    const depth = diameter / 5;
+    
+    // Scaling law: D = K * E^(1/3.4) in kilometers, convert to meters
+    const diameter = K * Math.pow(energyMT, 1 / 3.4) * 1000; // meters
+    
+    // Depth-to-diameter ratio of 1:5 (typical for impact craters)
+    const depth = diameter / 5; // meters
 
     return {
       diameter,
@@ -54,26 +59,32 @@ export class ImpactSimulator {
 
   /**
    * Estimate seismic magnitude and affected radius
-   * Based on Schultz & Gault (1975)
+   * Based on Schultz & Gault (1975) and realistic seismic attenuation
    */
-  static calculateSeismicEffects(params: ImpactParameters): {
-    magnitude: number;
-    radius: number;
-  } {
-    const energy = this.calculateImpactEnergy(params);
-    const energyJoules = energy.joules;
+static calculateSeismicEffects(params: ImpactParameters): {
+  magnitude: number;
+  radius: number;
+} {
+  const energy = this.calculateImpactEnergy(params);
+  
+  // Apply seismic efficiency factor
+  const seismicEfficiency = 1e-4; // 0.01% of energy goes into seismic
+  const seismicEnergy = energy.joules * seismicEfficiency;
 
-    // Richter magnitude formula
-    const magnitude = (2 / 3) * (Math.log10(energyJoules) - 4.8);
+  // Convert to Richter magnitude
+  const magnitude = (2 / 3) * (Math.log10(seismicEnergy) - 4.8);
 
-    // Affected radius (km) where shaking is felt
-    const radius = Math.pow(10, 0.5 * magnitude - 0.8);
+  const clampedMagnitude = Math.min(magnitude, 12);
 
-    return {
-      magnitude: Math.min(magnitude, 12),
-      radius,
-    };
-  }
+  // Felt radius estimate (very approximate)
+  const radius = Math.pow(10, (clampedMagnitude - 3) * 0.5) * 10;
+
+  return {
+    magnitude: clampedMagnitude,
+    radius: Math.min(radius, 1500), // km
+  };
+}
+
 
   /**
    * Calculate tsunami characteristics for water impacts
@@ -133,6 +144,71 @@ export class ImpactSimulator {
    * Main simulation function with USGS terrain enhancement
    */
   static async simulate(params: ImpactParameters): Promise<ImpactResults> {
+    // Check if backend usage is enabled
+    const useBackend = process.env.NEXT_PUBLIC_USE_BACKEND === 'true';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+
+    if (useBackend) {
+      try {
+        const response = await fetch(`${backendUrl}/api/simulation/simulate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            size: params.size,
+            density: params.density,
+            velocity: params.velocity,
+            angle: params.angle,
+            impact_location: {
+              lat: params.impactLocation.lat,
+              lng: params.impactLocation.lng,
+            },
+            is_water_impact: params.isWaterImpact || false,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[Backend] Using Python simulation results');
+          
+          // Transform backend response to match frontend types
+          return {
+            energy: {
+              joules: data.energy.joules,
+              megatonsTNT: data.energy.megatons_tnt,
+            },
+            crater: {
+              diameter: data.crater.diameter,
+              depth: data.crater.depth,
+            },
+            seismic: {
+              magnitude: data.seismic.magnitude,
+              radius: data.seismic.radius,
+            },
+            tsunami: data.tsunami ? {
+              waveHeight: data.tsunami.wave_height,
+              affectedRadius: data.tsunami.affected_radius,
+            } : undefined,
+            atmospheric: {
+              fireballRadius: data.atmospheric.fireball_radius,
+              thermalRadiation: data.atmospheric.thermal_radiation,
+              overpressure: data.atmospheric.overpressure,
+            },
+            casualties: data.casualties ? {
+              estimated: data.casualties.estimated,
+              affectedPopulation: data.casualties.affected_population,
+            } : undefined,
+          };
+        }
+      } catch (error) {
+        console.warn('[Backend] Failed to connect, falling back to frontend simulation:', error);
+      }
+    }
+
+    // Frontend simulation (original logic)
+    console.log('[Frontend] Using TypeScript simulation');
+    
     // Use targetLatitude/targetLongitude or fall back to impactLocation
     const lat = params.targetLatitude ?? params.impactLocation.lat;
     const lng = params.targetLongitude ?? params.impactLocation.lng;

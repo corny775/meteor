@@ -4,6 +4,8 @@
  * Uses OpenStreetMap Nominatim API and built-in population density data
  */
 
+import { cachedFetch, apiCache } from './cache-service';
+
 export interface PopulationData {
   density: number; // people per km²
   totalPopulation: number;
@@ -158,43 +160,52 @@ export class PopulationService {
         };
       }
 
-      // Try to get country/region from Nominatim (with rate limiting)
+      // Try to get country/region from Nominatim (with caching and rate limiting)
       try {
-        const response = await fetch(
-          `${this.NOMINATIM_ENDPOINT}?lat=${lat}&lon=${lng}&format=json`,
-          {
-            headers: {
-              'User-Agent': 'AsteroidImpactSimulator/1.0',
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const country = data.address?.country;
-
-          // Look up country density
-          if (country) {
-            const countryData = POPULATION_DENSITY_MAP.countries.find(
-              (c) => c.name.toLowerCase() === country.toLowerCase()
-            );
-
-            if (countryData) {
-              // Check if it's a city/town/village for urban multiplier
-              const isUrban =
-                data.address?.city ||
-                data.address?.town ||
-                data.address?.village;
-
-              const urbanMultiplier = isUrban ? 3 : 1;
-
-              return {
-                density: countryData.density * urbanMultiplier,
-                totalPopulation: 0,
-                nearestCity: metro?.name,
-                urbanArea: Boolean(isUrban),
-              };
+        const roundedLat = Math.round(lat * 100) / 100; // Round to 2 decimals for cache key
+        const roundedLng = Math.round(lng * 100) / 100;
+        const cacheKey = apiCache.generateKey('nominatim:reverse', { lat: roundedLat, lng: roundedLng });
+        
+        const data = await cachedFetch(cacheKey, async () => {
+          const response = await fetch(
+            `${this.NOMINATIM_ENDPOINT}?lat=${lat}&lon=${lng}&format=json`,
+            {
+              headers: {
+                'User-Agent': 'AsteroidImpactSimulator/1.0',
+              },
             }
+          );
+
+          if (!response.ok) {
+            throw new Error('Nominatim API failed');
+          }
+
+          return await response.json();
+        }, 1000 * 60 * 60 * 24 * 7); // 7 day TTL - city locations are static
+
+        const country = data.address?.country;
+
+        // Look up country density
+        if (country) {
+          const countryData = POPULATION_DENSITY_MAP.countries.find(
+            (c) => c.name.toLowerCase() === country.toLowerCase()
+          );
+
+          if (countryData) {
+            // Check if it's a city/town/village for urban multiplier
+            const isUrban =
+              data.address?.city ||
+              data.address?.town ||
+              data.address?.village;
+
+            const urbanMultiplier = isUrban ? 3 : 1;
+
+            return {
+              density: countryData.density * urbanMultiplier,
+              totalPopulation: 0,
+              nearestCity: metro?.name,
+              urbanArea: Boolean(isUrban),
+            };
           }
         }
       } catch (nominatimError) {
@@ -236,6 +247,7 @@ export class PopulationService {
 
   /**
    * Calculate casualties based on impact effects and population density
+   * Uses realistic fatality rates by distance zone
    */
   static calculateCasualties(
     populationData: PopulationData,
@@ -254,24 +266,24 @@ export class PopulationService {
   } {
     const { density } = populationData;
 
-    // Calculate affected populations in each zone
+    // Calculate affected populations in each zone (non-overlapping rings)
     const fireballArea = Math.PI * Math.pow(fireballRadiusKm, 2);
-    const overpressureArea = Math.PI * Math.pow(overpressureRadiusKm, 2);
-    const thermalArea = Math.PI * Math.pow(thermalRadiusKm, 2);
+    const overpressureArea = Math.PI * Math.pow(overpressureRadiusKm, 2) - fireballArea;
+    const thermalArea = Math.PI * Math.pow(thermalRadiusKm, 2) - Math.PI * Math.pow(overpressureRadiusKm, 2);
 
     const fireballPop = fireballArea * density;
-    const overpressurePop = (overpressureArea - fireballArea) * density;
-    const thermalPop = (thermalArea - overpressureArea) * density;
+    const overpressurePop = overpressureArea * density;
+    const thermalPop = thermalArea * density;
 
-    // Casualty rates by zone
-    const fireballFatalities = fireballPop * 1.0; // 100% fatality in fireball
-    const overpressureFatalities = overpressurePop * 0.6; // 60% fatality from blast
-    const thermalFatalities = thermalPop * 0.3; // 30% fatality from burns
+    // More realistic casualty rates by zone
+    const fireballFatalities = fireballPop * 0.95; // 95% fatality in fireball
+    const overpressureFatalities = overpressurePop * 0.50; // 50% fatality from blast
+    const thermalFatalities = thermalPop * 0.15; // 15% fatality from burns/fires
 
     const totalFatalities =
       fireballFatalities + overpressureFatalities + thermalFatalities;
     const totalAffected = fireballPop + overpressurePop + thermalPop;
-    const injured = (totalAffected - totalFatalities) * 0.7; // 70% of survivors injured
+    const injured = (totalAffected - totalFatalities) * 0.60; // 60% of survivors injured
 
     return {
       estimated: Math.round(totalFatalities),

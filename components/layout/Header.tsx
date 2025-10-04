@@ -5,6 +5,7 @@ import { Satellite, Shield, BarChart3, Home } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import Link from 'next/link';
+import ColorblindModeToggle from '@/components/ui/ColorblindModeToggle';
 
 export default function Header() {
   const { activeView, setActiveView } = useAppStore();
@@ -71,6 +72,9 @@ export default function Header() {
 
           {/* Navigation */}
           <nav className="flex items-center gap-2">
+            {/* Colorblind Mode Toggle */}
+            <ColorblindModeToggle />
+            
             {!isOnDashboard && (
               <Link href="/">
                 <motion.button

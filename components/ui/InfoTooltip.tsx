@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { HelpCircle } from 'lucide-react';
 import {
   Tooltip,
@@ -46,19 +47,20 @@ export default function InfoTooltip({
           <button 
             className="inline-flex ml-1.5 text-gray-400 hover:text-space-cyan transition-colors focus:outline-none focus:ring-2 focus:ring-space-cyan/50 rounded-full"
             aria-label={`Learn more about ${displayTitle}`}
+            type="button"
           >
             <HelpCircle className={iconSize} />
           </button>
         </TooltipTrigger>
         <TooltipContent 
-          className="max-w-md glass-morphism border-space-cyan/30 bg-black/95 backdrop-blur-xl p-4 shadow-2xl shadow-space-cyan/20"
+          className="max-w-md border border-space-cyan/30 bg-black/95 p-4 shadow-2xl shadow-space-cyan/20 backdrop-blur-xl"
           sideOffset={5}
         >
           <div className="space-y-2.5">
             <h4 className="font-bold text-space-cyan text-sm tracking-wide">{displayTitle}</h4>
             <p className="text-gray-300 text-xs leading-relaxed">{displayDescription}</p>
             {displayFormula && (
-              <div className="p-2.5 rounded bg-space-dark/50 border border-space-cyan/20">
+              <div className="p-2.5 rounded bg-black/50 border border-space-cyan/20">
                 <p className="text-xs font-mono text-space-neon">{displayFormula}</p>
               </div>
             )}

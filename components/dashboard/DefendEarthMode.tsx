@@ -25,7 +25,7 @@ const SAMPLE_SCENARIO: SimulationScenario = {
     density: 7800,
     velocity: 25,
     angle: 45,
-    impactLocation: { lat: 40.7128, lng: -74.006 },
+    impactLocation: { lat: 35.6762, lng: 139.6503 }, // Tokyo
     isWaterImpact: false,
   },
   daysUntilImpact: 30,

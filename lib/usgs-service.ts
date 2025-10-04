@@ -7,6 +7,8 @@
  * - Coastal vulnerability data
  */
 
+import { cachedFetch, apiCache } from './cache-service';
+
 export interface USGSElevationData {
   elevation: number; // meters (negative for underwater)
   lat: number;
@@ -34,42 +36,46 @@ export class USGSService {
 
   /**
    * Get elevation at a specific point
-   * Uses USGS Elevation Point Query Service
+   * Uses USGS Elevation Point Query Service with caching
    */
   static async getElevation(lat: number, lng: number): Promise<USGSElevationData> {
-    try {
-      const url = `${this.ELEVATION_API}?x=${lng}&y=${lat}&units=Meters&output=json`;
+    const cacheKey = apiCache.generateKey('usgs:elevation', { lat, lng });
+    
+    return cachedFetch(cacheKey, async () => {
+      try {
+        const url = `${this.ELEVATION_API}?x=${lng}&y=${lat}&units=Meters&output=json`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`USGS API error: ${response.status}`);
+        }
+
+        const data = await response.json();
       
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`USGS API error: ${response.status}`);
+        // USGS returns -1000000 for ocean/no data areas
+        const elevation = data.value !== -1000000 ? data.value : -100;
+        const isWater = elevation < 0 || data.value === -1000000;
+
+        return {
+          elevation: parseFloat(elevation.toFixed(2)),
+          lat,
+          lng,
+          source: 'USGS 3DEP',
+          isWater,
+        };
+      } catch (error) {
+        console.warn('USGS elevation fetch failed, using fallback:', error);
+        // Fallback: simple ocean detection
+        return {
+          elevation: 0,
+          lat,
+          lng,
+          source: 'Fallback estimation',
+          isWater: false,
+        };
       }
-
-      const data = await response.json();
-      
-      // USGS returns -1000000 for ocean/no data areas
-      const elevation = data.value !== -1000000 ? data.value : -100;
-      const isWater = elevation < 0 || data.value === -1000000;
-
-      return {
-        elevation: parseFloat(elevation.toFixed(2)),
-        lat,
-        lng,
-        source: 'USGS 3DEP',
-        isWater,
-      };
-    } catch (error) {
-      console.warn('USGS elevation fetch failed, using fallback:', error);
-      // Fallback: simple ocean detection
-      return {
-        elevation: 0,
-        lat,
-        lng,
-        source: 'Fallback estimation',
-        isWater: false,
-      };
-    }
+    }, 1000 * 60 * 60 * 24); // 24 hour TTL
   }
 
   /**
@@ -212,8 +218,10 @@ export class USGSService {
     const location = await this.getImpactLocationDetails(lat, lng);
     
     // Base crater calculations (Collins et al., 2005)
-    const baseDiameter = Math.pow(energyMT, 1 / 3.4) * 1000; // meters
-    const baseDepth = baseDiameter / 3;
+    // Scaling constant K (higher for water impacts)
+    const K = location.isWater ? 1.8 : 1.2;
+    const baseDiameter = K * Math.pow(energyMT, 1 / 3.4) * 1000; // meters
+    const baseDepth = baseDiameter / 5; // Typical depth-to-diameter ratio
     
     // Terrain modifications
     let terrainFactor = 1.0;

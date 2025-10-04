@@ -45,7 +45,7 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
   const materialRef = useRef<THREE.MeshStandardMaterial | null>(null);
   const uvOffsetRef = useRef(0);
 
-  // Load real NASA textures from assets folder
+  // Load real NASA textures from assets folder with optimization
   const earthTexture = useMemo(() => {
     const loader = new THREE.TextureLoader();
     const texture = loader.load(
@@ -57,6 +57,11 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
+    // Performance optimization
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;
+    texture.anisotropy = 2; // Reduced from default 16
     return texture;
   }, []);
 
@@ -70,6 +75,9 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
     );
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false; // Disable for bump maps
     return texture;
   }, []);
 
@@ -83,6 +91,8 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
     );
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
     return texture;
   }, []);
 
@@ -96,6 +106,8 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
     );
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
     return texture;
   }, []);
 
@@ -109,6 +121,8 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
     );
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
     return texture;
   }, []);
 
@@ -137,8 +151,8 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
 
   return (
     <group position={position} rotation={[0, 0, 23.5 / 360 * 2 * Math.PI]}>
-      {/* Main Earth sphere with all maps */}
-      <Sphere ref={earthRef} args={[10, 64, 64]}>
+      {/* Main Earth sphere with all maps - Reduced segments for performance */}
+      <Sphere ref={earthRef} args={[10, 48, 48]}>
         <meshStandardMaterial
           map={earthTexture}
           bumpMap={bumpTexture}
@@ -152,8 +166,8 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
         />
       </Sphere>
 
-      {/* Clouds layer */}
-      <Sphere ref={cloudsRef} args={[10.1, 64, 64]}>
+      {/* Clouds layer - Reduced segments */}
+      <Sphere ref={cloudsRef} args={[10.1, 48, 48]}>
         <meshStandardMaterial
           alphaMap={cloudTexture}
           transparent
@@ -162,8 +176,8 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
         />
       </Sphere>
 
-      {/* Atmosphere using custom shader (tutorial approach) */}
-      <Sphere ref={atmosphereRef} args={[12, 64, 64]}>
+      {/* Atmosphere using custom shader - Reduced segments */}
+      <Sphere ref={atmosphereRef} args={[12, 32, 32]}>
         <shaderMaterial
           vertexShader={atmosphereVertexShader}
           fragmentShader={atmosphereFragmentShader}
@@ -178,9 +192,9 @@ export default function EarthModel({ position = [0, 0, 0] }: EarthModelProps) {
         />
       </Sphere>
 
-      {/* Orbit ring */}
+      {/* Orbit ring - Reduced segments */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[99, 101, 128]} />
+        <ringGeometry args={[99, 101, 64]} />
         <meshBasicMaterial
           color="#00ff9f"
           transparent

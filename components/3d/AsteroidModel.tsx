@@ -22,7 +22,7 @@ export default function AsteroidModel({ position, size = 2 }: AsteroidModelProps
   return (
     <group position={position}>
       <mesh ref={asteroidRef}>
-        <dodecahedronGeometry args={[size, 1]} />
+        <dodecahedronGeometry args={[size, 0]} />
         <meshStandardMaterial
           color="#8B7355"
           roughness={0.9}
@@ -30,9 +30,9 @@ export default function AsteroidModel({ position, size = 2 }: AsteroidModelProps
         />
       </mesh>
       
-      {/* Glow effect */}
+      {/* Glow effect - Reduced segments */}
       <mesh>
-        <sphereGeometry args={[size * 1.2, 32, 32]} />
+        <sphereGeometry args={[size * 1.2, 16, 16]} />
         <meshBasicMaterial
           color="#ff6600"
           transparent
@@ -41,14 +41,14 @@ export default function AsteroidModel({ position, size = 2 }: AsteroidModelProps
         />
       </mesh>
 
-      {/* Trail particles */}
+      {/* Trail particles - Reduced count */}
       <points>
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            count={50}
+            count={25}
             array={new Float32Array(
-              Array.from({ length: 150 }, () => (Math.random() - 0.5) * size * 3)
+              Array.from({ length: 75 }, () => (Math.random() - 0.5) * size * 3)
             )}
             itemSize={3}
           />

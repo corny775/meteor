@@ -12,17 +12,26 @@ A comprehensive web-based platform for simulating asteroid impacts, visualizing 
 ### Core Functionality
 - **Real-time NASA NEO Data**: Fetch and display Near-Earth Objects from NASA's API
 - **Advanced Impact Simulation**: Calculate impact energy, crater size, seismic effects, and tsunami propagation
+- **USGS Geological Integration**: Real terrain data and elevation for accurate crater modeling
+- **Population Density Analysis**: Casualty calculations using real population data
 - **3D Orbital Visualization**: Interactive Three.js/React Three Fiber visualization of asteroid orbits
 - **2D Impact Mapping**: Leaflet-based Earth surface maps with impact zone overlays
 - **Deflection Strategies**: Simulate kinetic impactor, gravity tractor, and laser ablation missions
 - **Defend Earth Game Mode**: Interactive scenario-based planetary defense challenge
 
+### Accessibility Features
+- **Keyboard Navigation**: Full keyboard support (Ctrl+Enter to simulate, Ctrl+R to reset, Tab navigation)
+- **Colorblind Modes**: Support for deuteranopia, protanopia, and tritanopia
+- **Educational Tooltips**: 30+ scientific terms with formulas and examples
+- **Screen Reader Support**: ARIA labels and semantic HTML throughout
+
 ### Technical Highlights
 - **Frontend**: Next.js 14 (App Router), TypeScript, TailwindCSS, Framer Motion, GSAP
 - **3D Graphics**: Three.js, @react-three/fiber, @react-three/drei
 - **Backend**: Python FastAPI with scientific calculations
+- **API Caching**: Intelligent caching layer for USGS and Nominatim APIs
 - **State Management**: Zustand
-- **Mapping**: Leaflet.js / React-Leaflet
+- **Mapping**: Leaflet.js / React-Leaflet with click-to-place functionality
 - **UI Components**: shadcn/ui with custom space theme
 
 ## 🚀 Quick Start
@@ -40,6 +49,10 @@ npm install
 
 # Set up environment variables
 echo "NEXT_PUBLIC_NASA_API_KEY=your_api_key_here" > .env.local
+
+# Optional: Enable Python backend for simulations
+echo "NEXT_PUBLIC_USE_BACKEND=false" >> .env.local
+echo "NEXT_PUBLIC_BACKEND_URL=http://localhost:8000" >> .env.local
 
 # Run development server
 npm run dev
@@ -101,9 +114,14 @@ asteroid-impact-simulator/
 │       ├── slider.tsx
 │       └── LoadingScreen.tsx
 ├── lib/                       # Utility libraries
+│   ├── cache-service.ts      # API response caching
+│   ├── educational-content.ts # Educational terms database
 │   ├── impact-simulator.ts   # Impact calculation logic
+│   ├── keyboard-handler.ts   # Keyboard shortcuts system
 │   ├── nasa-service.ts       # NASA API integration
 │   ├── orbital-mechanics.ts  # Orbital physics calculations
+│   ├── population-service.ts # Population density data
+│   ├── usgs-service.ts       # USGS geological data
 │   └── utils.ts              # Helper functions
 ├── store/                     # State management
 │   ├── useAppStore.ts        # Main application state
@@ -123,12 +141,32 @@ asteroid-impact-simulator/
 
 ## 🎮 Usage Guide
 
+### Keyboard Shortcuts
+- **Ctrl+Enter**: Run simulation
+- **Ctrl+R**: Reset parameters
+- **Tab**: Navigate through controls
+- **Arrow Keys**: Adjust slider values
+- **Ctrl+Shift+H**: Toggle keyboard hints
+- **Escape**: Close modals/unfocus inputs
+
+### Accessibility Options
+1. **Colorblind Mode**: Click the eye icon in the header to cycle through:
+   - Default (normal vision)
+   - Deuteranopia (red-green colorblindness)
+   - Protanopia (red-weak colorblindness)
+   - Tritanopia (blue-yellow colorblindness)
+
+2. **Keyboard Hints**: See available shortcuts at the bottom of the Control Panel
+
+3. **Educational Tooltips**: Hover over info icons to see scientific explanations
+
 ### Dashboard View
 1. **Asteroid List**: Browse real NASA NEO data, search and filter asteroids
 2. **Control Panel**: Adjust impact parameters (size, density, velocity, angle)
-3. **Run Simulation**: Click "Run Simulation" to calculate impact effects
-4. **View Results**: See energy, crater size, seismic effects, atmospheric effects
-5. **Impact Map**: Visualize affected zones on interactive Earth map
+3. **Impact Map**: Click anywhere on the map or select a major city from the dropdown
+4. **Run Simulation**: Click "Run Simulation" or press Ctrl+Enter
+5. **View Results**: See energy, crater size, seismic effects, casualties with terrain and population data
+6. **Impact Map**: Visualize affected zones on interactive Earth map
 
 ### Orbital View
 1. Switch to "Orbital View" in the navigation
