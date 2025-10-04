@@ -1,0 +1,261 @@
+# Asteroid Impact Simulator
+
+A comprehensive web-based platform for simulating asteroid impacts, visualizing orbital mechanics, and evaluating planetary defense strategies.
+
+![Asteroid Impact Simulator](https://img.shields.io/badge/Next.js-14-black?style=flat&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat&logo=typescript)
+![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat&logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green?style=flat&logo=fastapi)
+
+## 🌍 Features
+
+### Core Functionality
+- **Real-time NASA NEO Data**: Fetch and display Near-Earth Objects from NASA's API
+- **Advanced Impact Simulation**: Calculate impact energy, crater size, seismic effects, and tsunami propagation
+- **3D Orbital Visualization**: Interactive Three.js/React Three Fiber visualization of asteroid orbits
+- **2D Impact Mapping**: Leaflet-based Earth surface maps with impact zone overlays
+- **Deflection Strategies**: Simulate kinetic impactor, gravity tractor, and laser ablation missions
+- **Defend Earth Game Mode**: Interactive scenario-based planetary defense challenge
+
+### Technical Highlights
+- **Frontend**: Next.js 14 (App Router), TypeScript, TailwindCSS, Framer Motion, GSAP
+- **3D Graphics**: Three.js, @react-three/fiber, @react-three/drei
+- **Backend**: Python FastAPI with scientific calculations
+- **State Management**: Zustand
+- **Mapping**: Leaflet.js / React-Leaflet
+- **UI Components**: shadcn/ui with custom space theme
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ and npm/yarn
+- Python 3.11+
+- NASA API Key (get free at https://api.nasa.gov/)
+
+### Frontend Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+echo "NEXT_PUBLIC_NASA_API_KEY=your_api_key_here" > .env.local
+
+# Run development server
+npm run dev
+```
+
+Visit `http://localhost:3000`
+
+### Backend Setup
+
+```bash
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run FastAPI server
+python main.py
+```
+
+Backend API will be available at `http://localhost:8000`
+API docs at `http://localhost:8000/docs`
+
+## 📚 Project Structure
+
+```
+asteroid-impact-simulator/
+├── app/                        # Next.js app directory
+│   ├── globals.css            # Global styles
+│   ├── layout.tsx             # Root layout
+│   └── page.tsx               # Home page
+├── components/
+│   ├── 3d/                    # Three.js 3D components
+│   │   ├── AsteroidModel.tsx
+│   │   ├── EarthModel.tsx
+│   │   └── OrbitPath.tsx
+│   ├── dashboard/             # Main dashboard components
+│   │   ├── AsteroidList.tsx
+│   │   ├── ControlPanel.tsx
+│   │   ├── DashboardMain.tsx
+│   │   ├── DefendEarthMode.tsx
+│   │   ├── ImpactMap.tsx
+│   │   ├── ImpactResults.tsx
+│   │   └── OrbitalView.tsx
+│   ├── layout/                # Layout components
+│   │   └── Header.tsx
+│   └── ui/                    # Reusable UI components
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── input.tsx
+│       ├── slider.tsx
+│       └── LoadingScreen.tsx
+├── lib/                       # Utility libraries
+│   ├── impact-simulator.ts   # Impact calculation logic
+│   ├── nasa-service.ts       # NASA API integration
+│   ├── orbital-mechanics.ts  # Orbital physics calculations
+│   └── utils.ts              # Helper functions
+├── store/                     # State management
+│   ├── useAppStore.ts        # Main application state
+│   └── useGameStore.ts       # Game mode state
+├── types/                     # TypeScript definitions
+│   └── index.ts
+├── backend/                   # Python FastAPI backend
+│   ├── main.py               # FastAPI app entry
+│   ├── models.py             # Pydantic models
+│   ├── simulation.py         # Impact simulation logic
+│   ├── routers/
+│   │   ├── asteroids.py     # NASA API endpoints
+│   │   ├── deflection.py    # Deflection calculations
+│   │   └── simulation.py    # Simulation endpoints
+│   └── requirements.txt      # Python dependencies
+└── README.md
+
+## 🎮 Usage Guide
+
+### Dashboard View
+1. **Asteroid List**: Browse real NASA NEO data, search and filter asteroids
+2. **Control Panel**: Adjust impact parameters (size, density, velocity, angle)
+3. **Run Simulation**: Click "Run Simulation" to calculate impact effects
+4. **View Results**: See energy, crater size, seismic effects, atmospheric effects
+5. **Impact Map**: Visualize affected zones on interactive Earth map
+
+### Orbital View
+1. Switch to "Orbital View" in the navigation
+2. Select an asteroid to visualize its orbit around the Sun
+3. View Earth's orbit and asteroid trajectory in 3D space
+4. Use mouse to rotate, zoom, and pan the visualization
+
+### Defend Earth Mode
+1. Click "Defend Earth" to start the game
+2. Read the scenario description
+3. Choose a deflection strategy:
+   - **Kinetic Impactor**: Fast, proven technology
+   - **Gravity Tractor**: Slow but precise
+   - **Laser Ablation**: Experimental, variable effectiveness
+4. Deploy before time runs out!
+5. View your score based on timing and success
+
+## 🔬 Scientific Background
+
+### Impact Energy Calculation
+```
+E = 0.5 × m × v²
+```
+Where:
+- m = mass (calculated from size and density)
+- v = velocity
+
+### Crater Scaling Laws (Collins et al., 2005)
+```
+D = K × E^(1/3.4)
+```
+Where:
+- D = crater diameter
+- K = scaling constant (1.2 for land, 1.8 for water)
+- E = energy in megatons TNT
+
+### Seismic Magnitude (Richter Scale)
+```
+M = (2/3) × (log₁₀(E) - 4.8)
+```
+
+### Deflection Delta-V (Kinetic Impactor)
+```
+Δv = (β × m_impactor × v_impactor) / m_asteroid
+```
+Where β is the momentum enhancement factor (1.5-3.0)
+
+## 🛠️ API Endpoints
+
+### Simulation
+- `POST /api/simulation/simulate` - Run full impact simulation
+- `GET /api/simulation/energy-estimate` - Quick energy calculation
+
+### Asteroids (NASA Data)
+- `GET /api/asteroids/neo/feed` - Get NEO feed by date range
+- `GET /api/asteroids/neo/{id}` - Get specific asteroid details
+- `GET /api/asteroids/neo/browse` - Browse all NEOs
+- `GET /api/asteroids/statistics` - Get NEO statistics
+
+### Deflection
+- `POST /api/deflection/calculate` - Calculate deflection parameters
+- `GET /api/deflection/strategies` - List available strategies
+
+## 🎨 Customization
+
+### Theme Colors (tailwind.config.ts)
+```typescript
+colors: {
+  space: {
+    dark: "#0a0e27",
+    blue: "#1a2d50",
+    purple: "#2d1b69",
+    cyan: "#00d4ff",
+    neon: "#00ff9f",
+  }
+}
+```
+
+### Custom Impact Parameters
+Modify default parameters in `store/useAppStore.ts`:
+```typescript
+impactParameters: {
+  size: 500,        // meters
+  density: 3000,    // kg/m³
+  velocity: 20,     // km/s
+  angle: 45,        // degrees
+}
+```
+
+## 📊 Data Sources
+
+- **NASA NEO API**: https://api.nasa.gov/
+- **Orbital Elements**: JPL Small-Body Database
+- **Impact Physics**: Collins et al. (2005), Holsapple (1993)
+- **Seismic Data**: Schultz & Gault (1975)
+
+## 🚧 Future Enhancements
+
+- [ ] PostgreSQL database integration
+- [ ] Machine learning impact prediction
+- [ ] WebXR/AR mode for mobile devices
+- [ ] PDF report generation
+- [ ] Social media sharing
+- [ ] Multi-language support
+- [ ] Real-time multiplayer Defend Earth mode
+- [ ] Integration with USGS geological data
+- [ ] Historical impact database
+
+## 🤝 Contributing
+
+Contributions welcome! Please read our contributing guidelines.
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 🙏 Acknowledgments
+
+- NASA for providing the NEO API
+- Scientific community for impact modeling research
+- Three.js and React Three Fiber communities
+- shadcn/ui for component library
+
+## 📞 Contact
+
+For questions or feedback, please open an issue on GitHub.
+
+---
+
+**Built with ❤️ for planetary defense education and awareness**
